@@ -1,0 +1,37 @@
+<?php
+
+use yii\db\Migration;
+
+/**
+ * Handles the creation of table `{{%vacation}}`.
+ */
+class m220705_175402_create_vacation_table extends Migration
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function safeUp()
+    {
+        $this->createTable('{{%vacation}}', [
+            'id' => $this->primaryKey(),
+            'order_id' => $this->integer(),
+            'employee_id' => $this->integer(),
+            'date_from' => $this->date(),
+            'date_to' => $this->date(),
+        ]);
+
+        $this->createIndex('idx-vacation-order_id', 'vacation', 'order_id');
+        $this->createIndex('idx-vacation-employee_id', 'vacation', 'employee_id');
+
+        $this->addForeignKey('fk_vacation_order_id', 'vacation', 'order_id', 'order', 'id', 'CASCADE', 'RESTRICT');
+        $this->addForeignKey('fk_vacation_employee_id', 'vacation', 'employee_id', 'employee', 'id', 'CASCADE', 'RESTRICT');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function safeDown()
+    {
+        $this->dropTable('{{%vacation}}');
+    }
+}

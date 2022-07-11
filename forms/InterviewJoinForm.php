@@ -19,7 +19,7 @@ class InterviewJoinForm extends Model
         $this->date = date('Y-m-d');
     }
 
-    public function rules()
+    public function rules(): array
     {
         return [
             [['date', 'firstName', 'lastName'], 'required'],
@@ -29,7 +29,7 @@ class InterviewJoinForm extends Model
         ];
     }
 
-    public function attributes()
+    public function attributes(): array
     {
         return [
             'date' => 'Date',

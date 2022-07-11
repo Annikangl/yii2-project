@@ -2,7 +2,6 @@
 
 namespace app\models;
 
-use lesson02\part3\demo04\Employee;
 use Yii;
 use yii\db\ActiveRecord;
 use yii\debug\models\search\Log;
@@ -20,46 +19,15 @@ use yii\debug\models\search\Log;
 
 class Interview extends ActiveRecord
 {
-    const SCENARIO_CREATE = 'create';
-
     const STATUS_NEW = 1;
     const STATUS_PASS = 2;
     const STATUS_REJECT = 3;
-
-    public function getNextStatusesList(): array
-    {
-        if ($this->status === self::STATUS_PASS) {
-            return [
-                self::STATUS_PASS => 'Passed'
-            ];
-        } elseif ($this->status === self::STATUS_REJECT) {
-            return [
-                self::STATUS_REJECT => 'Rejected',
-                self::STATUS_PASS => 'Passed'
-            ];
-        } else {
-            return [
-                self::STATUS_NEW => 'New',
-                self::STATUS_REJECT => 'Rejected',
-                self::STATUS_PASS => 'Passed'
-            ]
-        }
-    }
 
     public function afterSave($insert, $changedAttributes)
     {
         if (in_array('status', array_keys($changedAttributes)) && $this->status != $changedAttributes['status']) {
             if ($this->status == self::STATUS_NEW) {
-                if ($this->email) {
-                    Yii::$app->mailer->compose('interview/join', ['model' => $this])
-                        ->setFrom(Yii::$app->params['adminEmail'])
-                        ->setTo($this->email)
-                        ->setSubject('You are joined to interview')
-                        ->send();
-                }
-                $log = new Log();
-                $log->message = $this->first_name . $this->last_name . 'joined to interview';
-                $log->save();
+
             } elseif ($this->status == self::STATUS_PASS) {
                 if ($this->email) {
                     Yii::$app->mailer->compose('interview/pass', ['model' => $this])
@@ -88,7 +56,7 @@ class Interview extends ActiveRecord
         parent::afterSave($insert, $changedAttributes);
     }
 
-    public static function join(string $firstName, string $lastName, string $email, string $date)
+    public static function join(string $firstName, string $lastName, string $email, string $date): Interview
     {
         $interview = new Interview();
 
@@ -101,28 +69,48 @@ class Interview extends ActiveRecord
         return $interview;
     }
 
+    public function editData($firstName, $lastName, $email): void
+    {
+        $this->first_name = $firstName;
+        $this->last_name = $lastName;
+        $this->email = $email;
+    }
+
+    public function reject($reason): void
+    {
+        $this->guardInNotRejected();
+        $this->reject_reason = $reason;
+        $this->status = self::STATUS_REJECT;
+    }
+
+    public function move($date): void
+    {
+        $this->date = $date;
+    }
+
+    public function remove()
+    {
+        $this->guardIsNew();
+    }
+
+    public function isNew(): bool
+    {
+        return $this->status == self::STATUS_NEW;
+    }
+
+    public function isPassed(): bool
+    {
+        return $this->status == self::STATUS_PASS;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status == self::STATUS_REJECT;
+    }
+
     public static function tableName()
     {
         return 'intervies';
-    }
-
-    public function rules()
-    {
-        return [
-            [['date', 'first_name', 'last_name', 'status'], 'required'],
-            [['status'], 'required', 'except' => self::SCENARIO_CREATE],
-            [['status'], 'default', 'value' => self::STATUS_NEW],
-            [['date'], 'safe'],
-            [['reject_reason', 'required', 'when' => function (self $model) {
-                    return $model->status == self::STATUS_REJECT;
-                }, 'whenClient' => "functuin (attribute, value) {
-                    return $('#interview-status').val() == '" .self::STATUS_REJECT."'
-                }"
-            ]],
-            [['status', 'employee_id'], 'integer'],
-            [['first_name', 'last_name', 'email'], 'string', 'max' => 255],
-            [['reject_reason'], 'string'],
-        ];
     }
 
     public function attributeLabels()
@@ -143,4 +131,22 @@ class Interview extends ActiveRecord
     {
         return $this->hasOne(Employee::class, ['id' => 'employee_id']);
     }
+
+    private function guardInNotRejected()
+    {
+        if ($this->isRejected()) {
+            throw new \DomainException('Interview is already rejected');
+        }
+    }
+
+    private function guardIsNew()
+    {
+        if (!$this->isNew()) {
+            throw new \DomainException('Interview is not new');
+        }
+    }
+
+
+
+
 }

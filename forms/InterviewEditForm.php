@@ -7,9 +7,9 @@ use yii\base\Model;
 
 class InterviewEditForm extends Model
 {
-    public $firstName;
-    public $lastName;
-    public $email;
+    public string $firstName;
+    public string $lastName;
+    public string $email;
 
     private Interview $interview;
 

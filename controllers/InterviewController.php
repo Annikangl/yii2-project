@@ -7,6 +7,7 @@ use app\forms\InterviewJoinForm;
 use app\forms\InterviewMoveForm;
 use app\forms\InterviewRejectForm;
 use app\services\InterviewService;
+use app\servise\StaffService;
 use Yii;
 use app\models\Interview;
 use app\forms\search\InterviewSearch;
@@ -19,9 +20,9 @@ use yii\filters\VerbFilter;
  */
 class InterviewController extends Controller
 {
-    private $interviewService;
+    private StaffService $interviewService;
 
-    public function __construct($id, $module, InterviewService $interviewService, $config = [])
+    public function __construct($id, $module, StaffService $interviewService, $config = [])
     {
         $this->interviewService = $interviewService;
         parent::__construct($id, $module, $config = []);

@@ -18,5 +18,16 @@ class Bootstrap implements BootstrapInterface
         });
 
         $container->setSingleton(LoggerInterface::class, Logger::class);
+
+        $container->setSingleton(\app\dispatchers\interfaces\EventDispatcherInterface::class, function (\yii\di\Container $container) {
+           return new LoggerEventDispatcher(
+               new SimpleEventDispatcher([
+                   'app\events\interview\InterviewJoinEvent' => ['app\listeners\interview\InterviewJoinListener'],
+                   'app\events\interview\InterviewMoveEvent' => ['app\listeners\interview\InterviewMoveListener'],
+                   'app\events\interview\InterviewRejectEvent' => ['app\listeners\interview\InterviewRejectListener'],
+           ]),
+            $container->get(LoggerInterface::class)
+           );
+        });
     }
 }

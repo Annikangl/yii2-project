@@ -2,19 +2,24 @@
 
 namespace app\services;
 
+use app\dispatchers\interfaces\EventDispatcherInterface;
+use app\events\interview\InterviewEditEvent;
+use app\events\interview\InterviewJoinEvent;
+use app\events\interview\InterviewMoveEvent;
 use app\models\Interview;
+use app\repository\InterviewRepository;
+use app\services\interfaces\LoggerInterface;
+use app\services\interfaces\NotifierInterface;
 
 class StaffService
 {
-    private \InterviewRepository $interviewRepository;
-    private \NotifierInterface $notifier;
-    private \LoggerInterface $logger;
+    private InterviewRepository $interviewRepository;
+    private EventDispatcherInterface $eventDispatcher;
 
-    public function __construct(\InterviewRepository $interviewRepository, \NotifierInterface $notifier, \LoggerInterface  $logger)
+    public function __construct(InterviewRepository $interviewRepository, EventDispatcherInterface $eventDispatcher)
     {
         $this->interviewRepository = $interviewRepository;
-        $this->notifier = $notifier;
-        $this->logger = $logger;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     public function joinToInterview(string $firstName, string $lastName, string $email, string $date): Interview
@@ -22,8 +27,7 @@ class StaffService
         $interview = Interview::join($firstName, $lastName, $email, $date);
         $this->interviewRepository->add($interview);
 
-        $this->notifier->notify($interview->email, 'interview/join', ['model' => $interview], 'You are joined to interview');
-        $this->logger->log($interview->last_name . ' ' . $interview->first_name . ' is joined to interview');
+        $this->eventDispatcher->dispatch(new InterviewJoinEvent($interview));
 
         return $interview;
     }
@@ -34,7 +38,7 @@ class StaffService
         $interview->editData($firstName, $lastName, $email);
         $interview->save(false);
 
-        $this->logger->log('Interview ' . $interview->id . ' is updated');
+        $this->eventDispatcher->dispatch(new InterviewEditEvent($interview));
     }
 
     public function move($id, $date)
@@ -43,8 +47,7 @@ class StaffService
         $interview->move($date);
         $this->interviewRepository->save($interview);
 
-        $this->notifier->notify($interview->email, 'interview/mode', ['model' => $interview], 'Your interview is moved');
-        $this->logger->log('Interview ' . $interview->id . ' is move ' . $interview->date);
+        $this->eventDispatcher->dispatch(new InterviewMoveEvent($interview));
     }
 
     public function reject($id, $reason)

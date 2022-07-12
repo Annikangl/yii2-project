@@ -70,6 +70,18 @@ class Employee extends ActiveRecord
         parent::afterSave($insert, $changedAttributes);
     }
 
+    public static function create($firstName, $lastName, $address, $email)
+    {
+        $employee = new self();
+        $employee->first_name = $firstName;
+        $employee->last_name = $lastName;
+        $employee->address = $address;
+        $employee->email = $email;
+        $employee->status = self::STATUS_PROBATION;
+
+        return $employee;
+    }
+
     public function getFullName(): string
     {
         return $this->first_name . ' ' . $this->last_name;
@@ -80,24 +92,6 @@ class Employee extends ActiveRecord
         return 'employee';
     }
 
-    public function rules()
-    {
-        return [
-            [['first_name', 'last_name', 'email'], 'string', 'max' => 255],
-        ];
-    }
-
-    public function attributeLabels()
-    {
-        return [
-            'id' => 'ID',
-            'first_name' => 'First Name',
-            'last_name' => 'Last Name',
-            'address' => 'Address',
-            'email' => 'Email',
-            'status' => 'Status',
-        ];
-    }
 
     public function getAssignments()
     {

@@ -21,6 +21,18 @@ class Contract extends ActiveRecord
         return 'contract';
     }
 
+    public static function create(Employee $employee, string $lastName, string $firstName, $contractDate)
+    {
+        $contract = new self();
+        $contract->populateRelation('employee', $employee);
+        $contract->first_name = $firstName;
+        $contract->last_name = $lastName;
+        $contract->date_open = date('Y-m-d');
+        $contract->date_close = $contractDate;
+
+        return $contract;
+    }
+
     public function rules()
     {
         return [
@@ -55,5 +67,19 @@ class Contract extends ActiveRecord
     public function getPosition()
     {
         return $this->hasOne(Position::class, ['id' => 'postiion_id']);
+    }
+
+    public function beforeSave($insert): bool
+    {
+        if (parent::beforeSave($insert)) {
+            $related = $this->getRelatedRecords();
+
+            if (isset($related['employee']) && $employee = $related['employee']) {
+                $employee->save();
+                $this->employee_id = $employee->id;
+            }
+            return true;
+        }
+        return false;
     }
 }

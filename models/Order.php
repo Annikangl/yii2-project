@@ -16,6 +16,14 @@ class Order extends ActiveRecord
         return 'order';
     }
 
+    public static function create($orderDate)
+    {
+        $order = new self();
+        $order->date = $orderDate;
+
+        return $order;
+    }
+
     public function rules()
     {
         return [];

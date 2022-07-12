@@ -23,39 +23,6 @@ class Interview extends ActiveRecord
     const STATUS_PASS = 2;
     const STATUS_REJECT = 3;
 
-    public function afterSave($insert, $changedAttributes)
-    {
-        if (in_array('status', array_keys($changedAttributes)) && $this->status != $changedAttributes['status']) {
-            if ($this->status == self::STATUS_NEW) {
-
-            } elseif ($this->status == self::STATUS_PASS) {
-                if ($this->email) {
-                    Yii::$app->mailer->compose('interview/pass', ['model' => $this])
-                        ->setFrom(Yii::$app->params['adminEmail'])
-                        ->setTo($this->email)
-                        ->setSubject('You are passed to interview')
-                        ->send();
-                }
-                $log = new Log();
-                $log->message = $this->first_name . $this->last_name . ' is passed an interview';
-                $log->save();
-            } elseif ($this->status == self::STATUS_REJECT) {
-                if ($this->email) {
-                    Yii::$app->mailer->compose('interview/reject', ['model' => $this])
-                        ->setFrom(Yii::$app->params['adminEmail'])
-                        ->setTo($this->email)
-                        ->setSubject('You are failed to interview')
-                        ->send();
-                }
-                $log = new Log();
-                $log->message = $this->first_name . $this->last_name . ' failed an interview';
-                $log->save();
-            }
-        }
-
-        parent::afterSave($insert, $changedAttributes);
-    }
-
     public static function join(string $firstName, string $lastName, string $email, string $date): Interview
     {
         $interview = new Interview();
@@ -91,6 +58,13 @@ class Interview extends ActiveRecord
     public function remove()
     {
         $this->guardIsNew();
+    }
+
+    public function passBy(Employee $employee)
+    {
+        $this->guardIsNotPassed();
+        $this->populateRelation('employee', $employee);
+        $this->status = self::STATUS_PASS;
     }
 
     public function isNew(): bool
@@ -138,6 +112,14 @@ class Interview extends ActiveRecord
             throw new \DomainException('Interview is already rejected');
         }
     }
+
+    private function guardIsNotPassed()
+    {
+        if (!$this->isPassed()) {
+            throw new \DomainException('Interview is already passed');
+        }
+    }
+
 
     private function guardIsNew()
     {

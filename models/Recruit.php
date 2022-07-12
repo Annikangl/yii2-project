@@ -18,6 +18,16 @@ class Recruit extends ActiveRecord
         return 'position';
     }
 
+    public static function create(Employee $employee, Order $order, $recruitDate)
+    {
+        $recruit = new self();
+        $recruit->populateRelation('employee', $employee);
+        $recruit->populateRelation('order', $order);
+        $recruit->date = $recruitDate;
+
+        return $recruit;
+    }
+
     public function rules()
     {
         return [
